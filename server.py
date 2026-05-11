@@ -11,6 +11,8 @@ class TokenServer:
         self.counter_file = counter_file
         self.dev = dev
         self.buffer = ""
+        self.uart = None
+        self.epoll = None
 
         try:
             # Open a Serial file descrpitor and configure it as nonblocking 
@@ -19,18 +21,21 @@ class TokenServer:
             fcntl.fcntl(self.uart, fcntl.F_SETFL, flags | os.O_NONBLOCK)
         except OSError:
             print(f"Error: Device {self.dev} not found")
+            quit()
 
         # Create epoll instance
         self.epoll = select.epoll()
         self.epoll.register(self.uart, select.EPOLLIN)
 
-        initial_counter = self._load_counter()
+        self.initial_counter = self._load_counter()
         self.generator = TokenGenerator(self.shared_key, self.initial_counter)
     
     def __del__(self):
-        self.epoll.unregister(self.uart)
-        self.epoll.close()
-        os.close(self.uart)
+        if self.uart not None:
+            os.close(self.uart)
+            if self.epoll not None:
+                self.epoll.unregister(self.uart)
+                self.epoll.close()
 
         self._save_counter()
 
