@@ -11,32 +11,46 @@ class TokenServer:
         self.dev = dev
         self.shared_key = shared_key
         self.counter_file = counter_file
+        self.retries = retries
         self.initial_counter = 0
         self.uart = None
-        self.epoll = None
+        self.poll = None
 
         try:
-            # Open a Serial file descrpitor and configure it as nonblocking 
-            self.uart = os.open(dev, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+            # Open a Serial file descrpitor and configure it as nonblocking
+            open_flags = os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK
+            self.uart = os.open(dev, open_flags)
             flags = fcntl.fcntl(self.uart, fcntl.F_GETFL)
             fcntl.fcntl(self.uart, fcntl.F_SETFL, flags | os.O_NONBLOCK)
         except OSError:
             print(f"Error: Device {self.dev} not found")
             quit()
 
-        # Create epoll instance
-        self.epoll = select.epoll()
-        self.epoll.register(self.uart, select.EPOLLIN)
+        try:
+            self.poll = select.poll()
+            self.poll.register(self.uart, select.POLLIN)
+        except OSError:
+            print(f"Error: device {self.dev} cannot be monitored by poll")
+            quit()
 
         self.initial_counter = self._load_counter()
         self.generator = TokenGenerator(self.shared_key, self.initial_counter)
-    
+
     def __del__(self):
         if self.uart is not None:
-            os.close(self.uart)
-            if self.epoll is not None:
-                self.epoll.unregister(self.uart)
-                self.epoll.close()
+            try:
+                os.close(self.uart)
+            except Exception:
+                pass
+            if self.poll is not None:
+                try:
+                    self.poll.unregister(self.uart)
+                except Exception:
+                    pass
+                try:
+                    self.poll.close()
+                except Exception:
+                    pass
 
         if self.initial_counter > 0:
             self._save_counter()
@@ -63,18 +77,23 @@ class TokenServer:
         """
         count = 0
         while count < self.retries:
-            if msg.to_bytes().hex() == self.generator.generate_token(SECRET_KEY):
+            expected = self.generator.generate_token()
+            if msg.strip() == expected:
                 return True
             count += 1
-            
+
         return False
-    
+
     def handle_event(self) -> int:
         """
-        Handles an epoll event
+        Handles a poll event
         """
+        if self.uart is None:
+            return -1
+
         try:
-            data = os.read(server.uart, 1024).decode(errors="ignore")
+            raw = os.read(self.uart, 1024)
+            data = raw.decode(errors="ignore")
         except OSError as e:
             if e.errno != errno.EAGAIN:
                 raise
@@ -86,21 +105,23 @@ class TokenServer:
         self.buffer += data
 
         # Process full lines
-        while "\n" in buffer:
-            line, buffer = buffer.split("\n", 1)
-            if server.verify_msg(line):
+        while "\n" in self.buffer:
+            line, self.buffer = self.buffer.split("\n", 1)
+            if self._verify_msg(line):
                 return 1
             else:
                 return 0
 
+        return -1
+
 def enable_LED_G():
     # lights the green LED
     pass
-    
+
 def enable_LED_R():
     # lights the red LED
     pass
-    
+
 def disable_LEDs():
     # turns off all LEDs
     pass
@@ -113,10 +134,14 @@ if __name__ == "__main__":
 
     while True:
         disable_LEDs()
-        events = server.epoll.poll(-1)  # block until event
+        poller = server.poll
+        if poller is None:
+            print("Error: poll was not initialized")
+            quit()
 
-        for fileno, event in events:
-            if fileno == server.uart and event & select.EPOLLIN:
+        events = poller.poll(-1)  # block until event
+        for fd, event in events:
+            if fd == server.uart and event & select.POLLIN:
                 status = server.handle_event()
                 if status < 0:
                     continue
@@ -124,7 +149,6 @@ if __name__ == "__main__":
                     enable_LED_G()
                 elif status == 0:
                     enable_LED_R()
-
-            elif event & (select.EPOLLHUP | select.EPOLLERR):
+            elif event & (select.POLLHUP | select.POLLERR):
                 print("Error: UART closed or failed")
                 quit()
