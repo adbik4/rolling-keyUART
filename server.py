@@ -7,10 +7,11 @@ from TokenGenerator import TokenGenerator
 
 class TokenServer:
     def __init__(self, shared_key: str, retries: int, dev: str = "/dev/ttys0", counter_file: str = "counter.txt"):
+        self.buffer = ""
+        self.dev = dev
         self.shared_key = shared_key
         self.counter_file = counter_file
-        self.dev = dev
-        self.buffer = ""
+        self.initial_counter = 0
         self.uart = None
         self.epoll = None
 
@@ -31,13 +32,14 @@ class TokenServer:
         self.generator = TokenGenerator(self.shared_key, self.initial_counter)
     
     def __del__(self):
-        if self.uart not None:
+        if self.uart is not None:
             os.close(self.uart)
-            if self.epoll not None:
+            if self.epoll is not None:
                 self.epoll.unregister(self.uart)
                 self.epoll.close()
 
-        self._save_counter()
+        if self.counter_file > 0:
+            self._save_counter()
 
     def _load_counter(self) -> int:
         """Load counter value from file, or return 0 if file does not exist."""
