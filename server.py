@@ -38,7 +38,7 @@ class TokenServer:
                 self.epoll.unregister(self.uart)
                 self.epoll.close()
 
-        if self.counter_file > 0:
+        if self.initial_counter > 0:
             self._save_counter()
 
     def _load_counter(self) -> int:
