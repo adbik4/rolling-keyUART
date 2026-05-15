@@ -1,4 +1,4 @@
-import os
+gmport os
 import fcntl
 import select
 import errno
@@ -6,7 +6,7 @@ import errno
 from TokenGenerator import TokenGenerator
 
 class TokenServer:
-    def __init__(self, shared_key: str, retries: int, dev: str = "/dev/ttys0", counter_file: str = "counter.txt"):
+    def __init__(self, shared_key: str, retries: int, dev: str = "/dev/urandom", counter_file: str = "counter.txt"):
         self.buffer = ""
         self.dev = dev
         self.shared_key = shared_key
