@@ -19,38 +19,31 @@ def toggle_gpio(pi, gpio):
     else:
         pi.write(gpio, 0)
 
+def mexican_wave(pi, repeats=1, delay=1):
+    # flash the leds one by one
+    curr_led = 0
+    while repeats > 0:
+        toggle_gpio(mcu, LEDS[curr_led])
+        sleep(delay)
+        toggle_gpio(mcu, LEDS[curr_led])
+
+        curr_led += 1
+        if curr_led >= len(LEDS):
+            curr_led = 0
+
+        if (curr_led == 0):
+            repeats -= 1
+
 
 if __name__ == "__main__":
     mcu = pigpio.pi()
     try:
         gpio_reset(mcu)
-        
-        # one by one
-        curr_led = 0
-        repeats = 2
-        while repeats > 0:
-            toggle_gpio(mcu, LEDS[curr_led])
-            sleep(1)
-            toggle_gpio(mcu, LEDS[curr_led])
 
-            curr_led += 1
-            if curr_led >= len(LEDS):
-                curr_led = 0
-
-            repeats -= 1
+        mexican_wave(mcu, repeats=2, delay=1)
 
         # faster
-        repeats = 6
-        while repeats > 0:
-            toggle_gpio(mcu, LEDS[curr_led])
-            sleep(0.333)
-            toggle_gpio(mcu, LEDS[curr_led])
-
-            curr_led += 1
-            if curr_led >= len(LEDS):
-                curr_led = 0
-
-            repeats -= 1
+        mexican_wave(mcu, repeats=6, delay=0.333)
 
         # at random
 
