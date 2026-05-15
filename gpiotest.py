@@ -23,9 +23,9 @@ def mexican_wave(pi, repeats=1, delay=1):
     # flash the leds one by one
     curr_led = 0
     while repeats > 0:
-        toggle_gpio(mcu, LEDS[curr_led])
+        toggle_gpio(pi, LEDS[curr_led])
         sleep(delay)
-        toggle_gpio(mcu, LEDS[curr_led])
+        toggle_gpio(pi, LEDS[curr_led])
 
         curr_led += 1
         if curr_led >= len(LEDS):
@@ -43,9 +43,18 @@ if __name__ == "__main__":
         mexican_wave(mcu, repeats=2, delay=1)
 
         # faster
-        mexican_wave(mcu, repeats=6, delay=0.333)
+        mexican_wave(mcu, repeats=2, delay=0.333)
 
         # at random
+        last = 2
+        led_idx = last
+        while True:
+            while led_idx == last:
+                led_idx = round(random() * 2)
+            last = led_idx
+
+            toggle_gpio(mcu, LEDS[led_idx])
+            sleep(0.1)
 
     except KeyboardInterrupt:
         gpio_reset(mcu)
