@@ -1,4 +1,6 @@
 import pigpio
+
+from random import random
 from time import sleep
 
 GREEN_LED = 16
@@ -40,7 +42,7 @@ if __name__ == "__main__":
     try:
         gpio_reset(mcu)
 
-        mexican_wave(mcu, repeats=2, delay=1)
+        mexican_wave(mcu, repeats=1, delay=1)
 
         # faster
         mexican_wave(mcu, repeats=2, delay=0.333)
