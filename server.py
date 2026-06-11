@@ -1,9 +1,16 @@
-gmport os
+import os
 import fcntl
 import select
 import errno
+import pigpio
 
 from TokenGenerator import TokenGenerator
+
+GREEN_LED = 16
+RED_LED = 20
+WHITE_LED = 21
+
+LEDS = [GREEN_LED, RED_LED, WHITE_LED]
 
 class TokenServer:
     def __init__(self, shared_key: str, retries: int, dev: str = "/dev/urandom", counter_file: str = "counter.txt"):
@@ -15,6 +22,9 @@ class TokenServer:
         self.initial_counter = 0
         self.uart = None
         self.poll = None
+
+        self.mcu = pigpio.pi()
+        self.init_LEDs()
 
         try:
             # Open a Serial file descrpitor and configure it as nonblocking
@@ -54,6 +64,9 @@ class TokenServer:
 
         if self.initial_counter > 0:
             self._save_counter()
+        
+        self.clear_LEDs()
+        self.mcu.stop()
 
     def _load_counter(self) -> int:
         """Load counter value from file, or return 0 if file does not exist."""
@@ -114,17 +127,28 @@ class TokenServer:
 
         return -1
 
-def enable_LED_G():
-    # lights the green LED
-    pass
+    def init_LEDs(self):
+        # initialises all LEDs
+        for led in LEDS:
+            self.mcu.set_mode(led, pigpio.OUTPUT)
+            self.mcu.set_pull_up_down(led, pigpio.PUD_OFF)
 
-def enable_LED_R():
-    # lights the red LED
-    pass
+    def enable_LED_G(self):
+        # lights the green LED
+        self.mcu.write(GREEN_LED, 1)
 
-def disable_LEDs():
-    # turns off all LEDs
-    pass
+    def enable_LED_R(self):
+        # lights the red LED
+        self.mcu.write(RED_LED, 1)
+
+    def enable_LED_W(self):
+        # light the white LED
+        self.mcu.write(WHITE_LED, 1)
+
+    def clear_LEDs(self):
+        # turns off all LEDs
+        for led in LEDS:
+            self.mcu.write(led, 0)
 
 
 if __name__ == "__main__":
@@ -132,23 +156,29 @@ if __name__ == "__main__":
 
     print("Waiting for UART data...")
 
-    while True:
-        disable_LEDs()
-        poller = server.poll
-        if poller is None:
-            print("Error: poll was not initialized")
-            quit()
-
-        events = poller.poll(-1)  # block until event
-        for fd, event in events:
-            if fd == server.uart and event & select.POLLIN:
-                status = server.handle_event()
-                if status < 0:
-                    continue
-                elif status == 1:
-                    enable_LED_G()
-                elif status == 0:
-                    enable_LED_R()
-            elif event & (select.POLLHUP | select.POLLERR):
-                print("Error: UART closed or failed")
+    try:
+        while True:
+            poller = server.poll
+            if poller is None:
+                print("Error: poll was not initialized")
                 quit()
+
+            events = poller.poll(-1)  # block until event
+            for fd, event in events:
+                if fd == server.uart and event & select.POLLIN:
+                    status = server.handle_event()
+                    if status < 0:
+                        continue
+                    elif status == 1:
+                        server.enable_LED_G()
+                    elif status == 0:
+                        server.enable_LED_R()
+                elif event & (select.POLLHUP | select.POLLERR):
+                    print("Error: UART closed or failed")
+                    quit()
+    
+    except KeyboardInterrupt:
+        quit()
+    
+    except Exception as e:
+        print(e)
