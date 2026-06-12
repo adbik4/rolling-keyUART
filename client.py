@@ -11,14 +11,14 @@ class TokenClient:
         self.shared_key = shared_key
         self.counter_file = counter_file
         self.dev = dev
-        
+
         try:
             self.uart = serial.Serial(port=self.dev, baudrate=9600, timeout=1)
             print(f"Successfully opened UART port: {self.dev}")
         except serial.SerialException as e:
             print(f"[WARNING] Failed to open UART port {self.dev}: {e}")
             self.uart = None
-        
+
         initial_counter = self._load_counter()
         self.generator = TokenGenerator(self.shared_key, initial_counter)
 
@@ -51,7 +51,7 @@ class TokenClient:
 
     def execute_command(self, command: str, forward_step: int = 0):
         """Method for executing shell commands."""
-        
+
         if command == "gen":
             code = self.generator.generate_token()
             self._send_code(code)
@@ -59,10 +59,10 @@ class TokenClient:
 
         elif command == "gen_rand":
             random_key = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(16))
-            
+
             temp_generator = TokenGenerator(random_key, self.generator.counter)
             code = temp_generator.generate_token()
-            
+
             self._send_code(code)
 
         elif command == "gen_forward":
@@ -92,10 +92,10 @@ if __name__ == "__main__":
     while True:
         try:
             user_input = input("TokenShell> ").strip().split()
-            
+
             if not user_input:
                 continue
-                
+
             cmd = user_input[0].lower()
 
             if cmd in ["exit", "quit"]:
@@ -106,10 +106,10 @@ if __name__ == "__main__":
 
             elif cmd == "gen":
                 klient.execute_command("gen")
-                
+
             elif cmd == "gen_rand":
                 klient.execute_command("gen_rand")
-                
+
             elif cmd == "gen_forward":
                 if len(user_input) > 1:
                     try:
