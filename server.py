@@ -14,7 +14,7 @@ WHITE_LED = 21
 LEDS = [GREEN_LED, RED_LED, WHITE_LED]
 
 class TokenServer:
-    def __init__(self, shared_key: str, retries: int, dev: str = "/dev/urandom", counter_file: str = "counter.txt"):
+    def __init__(self, shared_key: str, retries: int, dev: str = "/dev/ttyS0", counter_file: str = "counter.txt"):
         self.buffer = ""
         self.dev = dev
         self.shared_key = shared_key
