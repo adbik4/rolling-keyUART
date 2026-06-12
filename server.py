@@ -1,4 +1,4 @@
-gmport os
+import os
 import fcntl
 import select
 import errno
@@ -6,7 +6,7 @@ import errno
 from TokenGenerator import TokenGenerator
 
 class TokenServer:
-    def __init__(self, shared_key: str, retries: int, dev: str = "/dev/urandom", counter_file: str = "counter.txt"):
+    def __init__(self, shared_key: str, retries: int, dev: str = "/dev/ttyS0", counter_file: str = "counter.txt"):
         self.buffer = ""
         self.dev = dev
         self.shared_key = shared_key
@@ -148,7 +148,7 @@ if __name__ == "__main__":
                 elif status == 1:
                     enable_LED_G()
                 elif status == 0:
-                    enable_LED_R()
+                    enable_LED_W()
             elif event & (select.POLLHUP | select.POLLERR):
                 print("Error: UART closed or failed")
                 quit()
