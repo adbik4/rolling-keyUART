@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import hashlib
 import os
 import secrets
@@ -77,10 +78,17 @@ class TokenClient:
 
 
 if __name__ == "__main__":
+    if os.geteuid() != 0:
+        print("Run this program as root")
+        quit()
+
     parser = argparse.ArgumentParser(description="Token Client CLI with UART support")
-    parser.add_argument("--dev", type=str, required=True, help="Path to UART device (e.g. /dev/ttyUSB0)")
+    parser.add_argument("--dev", type=str, required=False, help="Path to UART device (e.g. /dev/ttyUSB0)")
     parser.add_argument("--key", type=str, default="enter_password_here", help="Shared key for hash")
+
     args = parser.parse_args()
+    if args.dev == None:
+        args.dev = r"/dev/ttyUSB0"
 
     klient = TokenClient(shared_key=args.key, dev=args.dev)
 

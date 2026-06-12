@@ -2,6 +2,7 @@ import os
 import fcntl
 import select
 import errno
+import time
 import pigpio
 
 from TokenGenerator import TokenGenerator
@@ -171,13 +172,18 @@ if __name__ == "__main__":
                         continue
                     elif status == 1:
                         server.enable_LED_G()
+                        time.sleep(1)
+                        server.clear_LEDs()
                     elif status == 0:
-                        server.enable_LED_R()
+                        server.enable_LED_W()
+                        time.sleep(1)
+                        server.clear_LEDs()
                 elif event & (select.POLLHUP | select.POLLERR):
                     print("Error: UART closed or failed")
                     quit()
     
     except KeyboardInterrupt:
+        server.__del__():
         quit()
     
     except Exception as e:

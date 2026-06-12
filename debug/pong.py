@@ -1,4 +1,4 @@
-#/usr/bin/python3
+#!/usr/bin/python3
 import serial
 
 DEV = "/dev/ttyS0"

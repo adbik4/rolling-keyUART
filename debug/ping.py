@@ -9,6 +9,6 @@ except serial.SerialException as e:
     print(f"[WARNING] Failed to open UART port {DEV}: {e}")
     quit()
 
-uart.write("ping\n")
+uart.write(b"ping\n")
 uart.flush()
 uart.close()
