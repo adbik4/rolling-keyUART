@@ -1,9 +1,11 @@
+#!/usr/bin/python3
 import os
 import fcntl
 import select
 import errno
 import time
 import pigpio
+import time
 
 from TokenGenerator import TokenGenerator
 
@@ -65,8 +67,8 @@ class TokenServer:
 
         if self.initial_counter > 0:
             self._save_counter()
-        
-        self.clear_LEDs()
+
+        #self.clear_LEDs()
         self.mcu.stop()
 
     def _load_counter(self) -> int:
@@ -133,6 +135,7 @@ class TokenServer:
         for led in LEDS:
             self.mcu.set_mode(led, pigpio.OUTPUT)
             self.mcu.set_pull_up_down(led, pigpio.PUD_OFF)
+            self.mcu.write(led, 0)
 
     def enable_LED_G(self):
         # lights the green LED
@@ -153,6 +156,10 @@ class TokenServer:
 
 
 if __name__ == "__main__":
+    if os.geteuid() != 0:
+        print("Run this program as root")
+        quit()
+
     server = TokenServer("enter_password_here", 1000)
 
     print("Waiting for UART data...")
@@ -171,20 +178,22 @@ if __name__ == "__main__":
                     if status < 0:
                         continue
                     elif status == 1:
+                        print("Access granted")
                         server.enable_LED_G()
                         time.sleep(1)
                         server.clear_LEDs()
                     elif status == 0:
+                        print("Access denied")
                         server.enable_LED_W()
                         time.sleep(1)
                         server.clear_LEDs()
                 elif event & (select.POLLHUP | select.POLLERR):
                     print("Error: UART closed or failed")
                     quit()
-    
+
     except KeyboardInterrupt:
         server.__del__():
         quit()
-    
+
     except Exception as e:
         print(e)
