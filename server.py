@@ -91,13 +91,15 @@ class TokenServer:
         Verifies if the recieved key hash was valid.
         The server will check a specified number of counter values before giving up
         """
+        last_counter = self.generator.counter
         count = 0
         while count < self.retries:
             expected = self.generator.generate_token()
             if msg.strip() == expected:
                 return True
             count += 1
-
+        
+        self.generator.counter = last_counter
         return False
 
     def handle_event(self) -> int:
@@ -179,6 +181,7 @@ if __name__ == "__main__":
                         continue
                     elif status == 1:
                         print("Access granted")
+                        server._save_counter()
                         server.enable_LED_G()
                         time.sleep(1)
                         server.clear_LEDs()
@@ -192,7 +195,6 @@ if __name__ == "__main__":
                     quit()
 
     except KeyboardInterrupt:
-        server.__del__():
         quit()
 
     except Exception as e:
