@@ -12,5 +12,5 @@ class TokenGenerator:
 
         encoded_data = data_to_hash.encode('utf-8')
         hash_result = hashlib.sha256(encoded_data)
-        
+
         return hash_result.hexdigest()
